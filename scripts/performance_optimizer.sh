@@ -111,16 +111,89 @@ analyze_cpu_performance() {
         print_good "CPU usage is normal: ${CPU_USAGE}%"
     fi
     
-    # CPU governor and frequency scaling
-    print_step "CPU Governor and Frequency Scaling:"
-    if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
-        CURRENT_GOVERNOR=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
-        print_info "Current Governor: $CURRENT_GOVERNOR"
+    # Check CPU frequency scaling driver
+    print_step "CPU Frequency Scaling:"
+    if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver ]; then
+        SCALING_DRIVER=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver)
+        print_info "Scaling Driver: $SCALING_DRIVER"
         
-        # Available governors
-        if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors ]; then
-            AVAILABLE_GOVERNORS=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)
-            print_info "Available Governors: $AVAILABLE_GOVERNORS"
+        # Handle AMD P-State EPP (modern AMD approach)
+        if [[ "$SCALING_DRIVER" == *"amd-pstate"* ]]; then
+            print_good "✅ Using modern AMD P-State driver!"
+            
+            # Check Energy Performance Preference
+            if [ -f /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference ]; then
+                CURRENT_EPP=$(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference)
+                print_info "Energy Performance Preference (EPP): $CURRENT_EPP"
+                
+                # Available EPP options
+                if [ -f /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_available_preferences ]; then
+                    AVAILABLE_EPP=$(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_available_preferences)
+                    print_info "Available EPP Options: $AVAILABLE_EPP"
+                fi
+                
+                # EPP recommendations
+                case "$CURRENT_EPP" in
+                    "performance")
+                        print_info "✅ Using performance EPP - maximum performance"
+                        print_info "   AMD P-State EPP provides intelligent hardware-level scaling"
+                        ;;
+                    "balance_performance")
+                        print_good "✅ Using balance_performance EPP - optimal choice!"
+                        print_info "   Good balance of performance and efficiency"
+                        ;;
+                    "balance_power"|"balanced")
+                        print_info "⚡ Using balanced EPP - efficiency focused"
+                        ;;
+                    "power")
+                        print_warning "⚠️  Using power EPP - maximum power saving"
+                        print_info "   Consider balance_performance for better responsiveness"
+                        ;;
+                    *)
+                        print_info "Using $CURRENT_EPP EPP setting"
+                        ;;
+                esac
+            fi
+        else
+            # Traditional governor-based approach
+            if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
+                CURRENT_GOVERNOR=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
+                print_info "Current Governor: $CURRENT_GOVERNOR"
+                
+                # Available governors
+                if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors ]; then
+                    AVAILABLE_GOVERNORS=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)
+                    print_info "Available Governors: $AVAILABLE_GOVERNORS"
+                fi
+                
+                # Governor recommendations
+                case "$CURRENT_GOVERNOR" in
+                    "powersave")
+                        print_warning "❌ Using powersave governor - poor performance"
+                        print_info "   Recommendation: Switch to 'schedutil' for intelligent scaling"
+                        ;;
+                    "performance")
+                        print_warning "⚠️  Using performance governor - high power consumption"
+                        print_info "   Recommendation: Switch to 'schedutil' for efficiency without sacrificing performance"
+                        ;;
+                    "schedutil")
+                        print_good "✅ Using schedutil governor - optimal choice!"
+                        print_info "   schedutil provides intelligent performance scaling with energy efficiency"
+                        ;;
+                    "ondemand")
+                        print_info "✅ Using ondemand governor - good dynamic scaling"
+                        print_info "   Note: schedutil is more modern and responsive than ondemand"
+                        ;;
+                    "conservative")
+                        print_info "⚠️  Using conservative governor - gradual scaling"
+                        print_info "   Recommendation: Consider 'schedutil' for better responsiveness"
+                        ;;
+                    *)
+                        print_info "Using $CURRENT_GOVERNOR governor"
+                        print_info "   Recommendation: Switch to 'schedutil' if available"
+                        ;;
+                esac
+            fi
         fi
         
         # CPU frequency information
@@ -129,22 +202,6 @@ analyze_cpu_performance() {
             CURRENT_FREQ_MHZ=$((CURRENT_FREQ / 1000))
             print_info "Current Frequency: ${CURRENT_FREQ_MHZ} MHz"
         fi
-        
-        # Recommendations
-        case "$CURRENT_GOVERNOR" in
-            "powersave")
-                print_warning "Using powersave governor - consider 'schedutil' for better performance"
-                ;;
-            "performance")
-                print_info "Using performance governor - high performance but higher power consumption"
-                ;;
-            "schedutil")
-                print_good "Using schedutil governor - good balance of performance and efficiency"
-                ;;
-            *)
-                print_info "Using $CURRENT_GOVERNOR governor"
-                ;;
-        esac
     else
         print_warning "CPU frequency scaling not available or not accessible"
     fi
@@ -168,23 +225,98 @@ optimize_cpu_performance() {
     
     print_step "Optimizing CPU governor..."
     
-    # Check if cpupower is available
-    if command_exists cpupower; then
-        # Set schedutil governor for balanced performance
-        if sudo cpupower frequency-set -g schedutil >/dev/null 2>&1; then
-            print_good "Set CPU governor to 'schedutil' for balanced performance"
-            log_success "CPU governor set to schedutil"
+    # Check if schedutil is supported
+    if ! echo "$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors 2>/dev/null)" | grep -q "schedutil"; then
+        print_info "💡 schedutil governor not available on this system"
+        print_info "   This usually means the kernel doesn't have CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y"
+        print_info "   schedutil requires kernel 4.7+ with proper configuration"
+        
+        # Check current kernel and provide recommendations
+        KERNEL_VERSION=$(uname -r)
+        if [[ $KERNEL_VERSION == *"zen"* ]]; then
+            print_info "   🔧 To enable schedutil on zen kernel:"
+            print_info "   1. Check if a newer zen kernel version includes schedutil"
+            print_info "   2. Or switch to the standard linux kernel: sudo pacman -S linux"
+            print_info "   3. Or compile a custom kernel with CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y"
+        elif [[ $KERNEL_VERSION == *"lts"* ]]; then
+            print_info "   🔧 LTS kernel detected. Try: sudo pacman -S linux (for latest kernel)"
         else
-            # Fallback to performance governor
-            if sudo cpupower frequency-set -g performance >/dev/null 2>&1; then
-                print_good "Set CPU governor to 'performance'"
-                log_success "CPU governor set to performance"
+            print_info "   🔧 Try updating kernel: sudo pacman -Syu"
+            print_info "   🔧 Or check kernel config: zcat /proc/config.gz | grep SCHEDUTIL"
+        fi
+    fi
+    
+    # Check what scaling driver is being used
+    if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver ]; then
+        SCALING_DRIVER=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver)
+        
+        # Handle AMD P-State EPP systems
+        if [[ "$SCALING_DRIVER" == *"amd-pstate"* ]]; then
+            print_step "Optimizing AMD P-State Energy Performance Preference..."
+            
+            if [ -f /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_available_preferences ]; then
+                AVAILABLE_EPP=$(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_available_preferences)
+                CURRENT_EPP=$(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference 2>/dev/null)
+                
+                # Set optimal EPP (balance_performance is usually best)
+                if echo "$AVAILABLE_EPP" | grep -q "balance_performance"; then
+                    if echo "balance_performance" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference >/dev/null 2>&1; then
+                        print_good "✅ Set AMD EPP to 'balance_performance' - optimal balance"
+                        print_info "   Hardware-level intelligent scaling with performance priority"
+                        log_success "AMD P-State EPP set to balance_performance"
+                    fi
+                elif echo "$AVAILABLE_EPP" | grep -q "performance" && [ "$CURRENT_EPP" != "performance" ]; then
+                    if echo "performance" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference >/dev/null 2>&1; then
+                        print_good "✅ AMD EPP already set to 'performance' - maximum performance"
+                        print_info "   AMD P-State provides intelligent hardware-level scaling"
+                        log_success "AMD P-State EPP confirmed as performance"
+                    fi
+                else
+                    print_good "✅ AMD P-State EPP already optimally configured"
+                    print_info "   Current setting: $CURRENT_EPP"
+                fi
             else
-                print_warning "Could not set CPU governor"
+                print_info "✅ AMD P-State EPP detected but preferences not configurable"
+                print_info "   Hardware automatically manages performance scaling"
+            fi
+        else
+            # Traditional governor-based optimization
+            if command_exists cpupower; then
+                # First, check available governors
+                AVAILABLE_GOVERNORS=""
+                if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors ]; then
+                    AVAILABLE_GOVERNORS=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)
+                fi
+                
+                # Priority order: schedutil > ondemand > performance > powersave
+                if echo "$AVAILABLE_GOVERNORS" | grep -q "schedutil"; then
+                    if sudo cpupower frequency-set -g schedutil >/dev/null 2>&1; then
+                        print_good "✅ Set CPU governor to 'schedutil' - intelligent performance scaling"
+                        print_info "   schedutil provides optimal performance with energy efficiency"
+                        log_success "CPU governor set to schedutil (optimal choice)"
+                    fi
+                elif echo "$AVAILABLE_GOVERNORS" | grep -q "ondemand"; then
+                    if sudo cpupower frequency-set -g ondemand >/dev/null 2>&1; then
+                        print_good "✅ Set CPU governor to 'ondemand' - dynamic scaling"
+                        print_info "   ondemand scales frequency based on CPU load"
+                        log_success "CPU governor set to ondemand (good alternative)"
+                    fi
+                elif echo "$AVAILABLE_GOVERNORS" | grep -q "performance"; then
+                    if sudo cpupower frequency-set -g performance >/dev/null 2>&1; then
+                        print_good "✅ Set CPU governor to 'performance' - maximum performance"
+                        print_warning "   Consider enabling schedutil for better efficiency"
+                        log_success "CPU governor set to performance (fallback)"
+                    fi
+                else
+                    print_warning "❌ No suitable CPU governor available"
+                    print_info "Available governors: $AVAILABLE_GOVERNORS"
+                fi
+            else
+                print_warning "cpupower not available. Install with: sudo pacman -S cpupower"
             fi
         fi
     else
-        print_warning "cpupower not available. Install with: sudo pacman -S cpupower"
+        print_warning "CPU frequency scaling not available"
     fi
     
     # CPU microcode updates check
