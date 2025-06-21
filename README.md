@@ -64,7 +64,7 @@ chmod +x arch_maintenance.sh
 
 ### Basic Usage
 ```bash
-# Complete maintenance (hardware monitoring + full maintenance)
+# Complete maintenance (hardware + security + full maintenance)
 ./arch_maintenance.sh
 
 # Complete maintenance (non-interactive)
@@ -78,6 +78,7 @@ chmod +x arch_maintenance.sh
 
 # Specific tasks only
 ./arch_maintenance.sh --health-check     # Hardware monitoring only
+./arch_maintenance.sh --security-scan    # Security scanning only
 ./arch_maintenance.sh --update-only      # Updates only
 ./arch_maintenance.sh --clean-only       # Cleanup only
 ```
@@ -90,6 +91,7 @@ chmod +x arch_maintenance.sh
 - `--update-only`: Only perform system updates
 - `--clean-only`: Only perform cleanup tasks
 - `--health-check`: Monitor hardware health only
+- `--security-scan`: Security scanning only
 - `--verbose`: Enable verbose output
 - `--help`: Show help information
 - `--version`: Show version information
@@ -127,6 +129,16 @@ chmod +x arch_maintenance.sh
 - Memory and swap usage analysis
 - System load monitoring
 - Battery status (for laptops)
+
+### 6. Security Scanning
+- Security update detection and prioritization
+- SSH configuration security analysis
+- User account security validation
+- File permission verification
+- Network security assessment
+- Rootkit and malware detection
+- System integrity checking
+- Failed login attempt monitoring
 
 ## Configuration
 
@@ -215,6 +227,102 @@ For issues, questions, or contributions:
 - Create an issue on the repository
 - Check the logs directory for detailed error information
 - Test with `--dry-run` first for troubleshooting
+
+## Security Hardening Implementation
+
+The ArchCare system has been significantly hardened with comprehensive security measures:
+
+### 🔒 **Security Features Implemented**
+
+#### **1. Kernel Security Hardening**
+- **File**: `/etc/sysctl.d/99-security-hardening.conf`
+- **Features**: 
+  - Kernel message restrictions (`kernel.dmesg_restrict = 1`)
+  - Pointer protection (`kernel.kptr_restrict = 2`)
+  - SysRq disabled (`kernel.sysrq = 0`)
+  - Unprivileged BPF disabled (`kernel.unprivileged_bpf_disabled = 1`)
+  - Ptrace scope protection (`kernel.yama.ptrace_scope = 1`)
+  - Network security hardening (redirects, source routing, etc.)
+
+#### **2. Password Security Policies**
+- **File**: `/etc/login.defs` (enhanced)
+- **Features**:
+  - Maximum password age: 90 days
+  - Minimum password age: 1 day
+  - Password warning: 14 days
+  - Secure umask: 027
+  - Strong password hashing: SHA-256/512 with high rounds
+
+#### **3. Security Logging & Monitoring**
+- **auditd**: Comprehensive security event logging
+- **File Integrity**: AIDE with 566k+ file database
+- **Malware Detection**: Linux Malware Detect (maldet)
+- **Intrusion Prevention**: fail2ban
+
+#### **4. Network Security**
+- **Firewall**: firewalld with hardened rules
+- **SSH**: Service disabled and removed from firewall
+- **Network hardening**: Comprehensive sysctl network protections
+
+#### **5. Access Control**
+- **AppArmor**: Mandatory access control (requires reboot)
+- **File Permissions**: Hardened default umask (027)
+- **User Security**: Enhanced login controls
+
+### 📊 **Current Security Score: 8/12 (66%)**
+
+#### **✅ Active Security Measures:**
+1. ✓ Kernel hardening enabled
+2. ✓ Security logging (auditd) active
+3. ✓ File integrity monitoring (AIDE) installed
+4. ✓ Malware detection (maldet) installed
+5. ✓ Intrusion prevention (fail2ban) running
+6. ✓ Firewall hardened (SSH removed)
+7. ✓ Secure file permissions (umask 027)
+8. ✓ Network security hardening applied
+
+#### **⚠️ Requires Attention:**
+- **AppArmor**: Needs kernel parameter `apparmor=1 security=apparmor` 
+- **System Reboot**: Required for kernel updates and AppArmor activation
+- **Password Policy**: May need manual verification
+
+### 🚀 **Security Scanner Usage**
+
+The enhanced security scanner now includes hardening verification:
+
+```bash
+# Run complete security scan with hardening verification
+./arch_maintenance.sh --security-scan
+
+# Run security scanner directly
+bash scripts/security_scanner.sh
+```
+
+### 📖 **Security Recommendations**
+
+1. **Immediate**: Reboot system to activate kernel updates and AppArmor
+2. **Regular**: Run security scans weekly with `--security-scan`
+3. **Monitoring**: Check `/var/log/aide.log` for file integrity alerts
+4. **Updates**: Keep security tools updated with automatic signature updates
+
+### 🔧 **Manual Security Commands**
+
+```bash
+# Check AIDE file integrity
+sudo aide --check
+
+# Update AIDE database
+sudo aide --update
+
+# Check AppArmor status
+sudo aa-status
+
+# View security logs
+sudo journalctl -u auditd
+
+# Check fail2ban status
+sudo fail2ban-client status
+```
 
 ---
 

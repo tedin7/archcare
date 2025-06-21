@@ -29,6 +29,7 @@ UPDATE_ONLY=false
 CLEAN_ONLY=false
 HEALTH_CHECK=false
 ALL_FEATURES=false
+SECURITY_SCAN=false
 VERBOSE=false
 
 # Initialize directories and logging
@@ -425,6 +426,18 @@ run_hardware_monitoring() {
     fi
 }
 
+# Run security scanning
+run_security_scanning() {
+    if [ -f "$SCRIPTS_DIR/security_scanner.sh" ]; then
+        log_info "Running security scanning..."
+        . "$SCRIPTS_DIR/security_scanner.sh"
+        run_security_scanner
+    else
+        log_warning "Security scanner script not found at $SCRIPTS_DIR/security_scanner.sh"
+        print_info "Skipping security scanning"
+    fi
+}
+
 # Display help
 show_help() {
     cat << EOF
@@ -438,6 +451,7 @@ OPTIONS:
     --update-only   Only perform system updates
     --clean-only    Only perform cleanup tasks
     --health-check  Monitor hardware health (temperature, disk, memory)
+    --security-scan Security scanning (vulnerabilities, malware, config)
     --all           Run full maintenance + hardware monitoring + all features
     --verbose       Enable verbose output
     --help          Show this help message
@@ -451,9 +465,11 @@ EXAMPLES:
     $0 --update-only      # Updates only
     $0 --clean-only       # Cleanup only
     $0 --health-check     # Hardware health monitoring only
+    $0 --security-scan    # Security scanning only
 
 This script performs comprehensive maintenance on Arch Linux systems including:
 - Hardware health monitoring (temperature, disk, memory)
+- Security scanning (vulnerabilities, malware, configuration)
 - System updates and AUR packages
 - Orphaned package removal
 - Cache cleaning
@@ -486,6 +502,9 @@ parse_arguments() {
             --all)
                 ALL_FEATURES=true
                 ;;
+            --security-scan)
+                SECURITY_SCAN=true
+                ;;
             --verbose)
                 VERBOSE=true
                 ;;
@@ -512,6 +531,9 @@ run_maintenance() {
     if [ "$HEALTH_CHECK" = true ]; then
         print_header "Hardware Health Check Only"
         run_hardware_monitoring
+    elif [ "$SECURITY_SCAN" = true ]; then
+        print_header "Security Scan Only"
+        run_security_scanning
     elif [ "$UPDATE_ONLY" = true ]; then
         print_header "System Updates Only"
         update_databases
@@ -524,10 +546,13 @@ run_maintenance() {
         clean_system_logs
         clean_temp_files
     elif [ "$ALL_FEATURES" = true ]; then
-        print_header "Complete System Maintenance + Hardware Monitoring"
+        print_header "Complete System Maintenance + Hardware Monitoring + Security Scan"
         
         # Hardware monitoring first
         run_hardware_monitoring
+        
+        # Security scanning
+        run_security_scanning
         
         # Update tasks
         update_databases
@@ -544,10 +569,13 @@ run_maintenance() {
         update_system_databases
         check_failed_services
     else
-        print_header "Full System Maintenance + Hardware Monitoring"
+        print_header "Full System Maintenance + Hardware Monitoring + Security Scan"
         
         # Hardware monitoring first (now included by default)
         run_hardware_monitoring
+        
+        # Security scanning (now included by default)
+        run_security_scanning
         
         # Update tasks
         update_databases
