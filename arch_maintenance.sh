@@ -27,6 +27,7 @@ DRY_RUN=false
 AUTO_MODE=false
 UPDATE_ONLY=false
 CLEAN_ONLY=false
+HEALTH_CHECK=false
 VERBOSE=false
 
 # Initialize directories and logging
@@ -423,6 +424,7 @@ OPTIONS:
     --dry-run       Preview changes without applying them
     --update-only   Only perform system updates
     --clean-only    Only perform cleanup tasks
+    --health-check  Monitor hardware health (temperature, disk, memory)
     --verbose       Enable verbose output
     --help          Show this help message
     --version       Show version information
@@ -433,6 +435,7 @@ EXAMPLES:
     $0 --dry-run          # Preview mode
     $0 --update-only      # Updates only
     $0 --clean-only       # Cleanup only
+    $0 --health-check     # Hardware health monitoring
 
 This script performs comprehensive maintenance on Arch Linux systems including:
 - System updates and AUR packages
@@ -461,6 +464,9 @@ parse_arguments() {
             --clean-only)
                 CLEAN_ONLY=true
                 ;;
+            --health-check)
+                HEALTH_CHECK=true
+                ;;
             --verbose)
                 VERBOSE=true
                 ;;
@@ -484,7 +490,15 @@ parse_arguments() {
 
 # Main maintenance function
 run_maintenance() {
-    if [ "$UPDATE_ONLY" = true ]; then
+    if [ "$HEALTH_CHECK" = true ]; then
+        print_header "Hardware Health Check Only"
+        if [ -f "$SCRIPTS_DIR/hardware_monitor.sh" ]; then
+            . "$SCRIPTS_DIR/hardware_monitor.sh"
+            run_hardware_monitor
+        else
+            log_error "Hardware monitoring script not found at $SCRIPTS_DIR/hardware_monitor.sh"
+        fi
+    elif [ "$UPDATE_ONLY" = true ]; then
         print_header "System Updates Only"
         update_databases
         system_upgrade

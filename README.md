@@ -76,6 +76,9 @@ chmod +x arch_maintenance.sh
 # Specific tasks only
 ./arch_maintenance.sh --update-only
 ./arch_maintenance.sh --clean-only
+
+# Hardware health monitoring
+./arch_maintenance.sh --health-check
 ```
 
 ### Command Line Options
@@ -84,6 +87,8 @@ chmod +x arch_maintenance.sh
 - `--dry-run`: Preview changes without applying them
 - `--update-only`: Only perform system updates
 - `--clean-only`: Only perform cleanup tasks
+- `--health-check`: Monitor hardware health (temperature, disk, memory)
+- `--verbose`: Enable verbose output
 - `--help`: Show help information
 - `--version`: Show version information
 
@@ -112,6 +117,14 @@ chmod +x arch_maintenance.sh
 - Checks for failed systemd services
 - Validates file system integrity
 - Updates font cache
+
+### 5. Hardware Health Monitoring
+- CPU temperature monitoring with smart thresholds
+- GPU temperature detection (NVIDIA, AMD, Intel)
+- Disk health and SMART status checking
+- Memory and swap usage analysis
+- System load monitoring
+- Battery status (for laptops)
 
 ## Configuration
 
