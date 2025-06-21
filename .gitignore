@@ -1,0 +1,32 @@
+# ArchCare - Gitignore file
+
+# Log files
+logs/*.log
+logs/*.txt
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+
+# Cache files
+cache/
+.cache/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Personal configuration overrides
+config/local.conf
+config/personal.conf 
