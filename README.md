@@ -64,30 +64,32 @@ chmod +x arch_maintenance.sh
 
 ### Basic Usage
 ```bash
-# Interactive mode (recommended for first run)
+# Complete maintenance (hardware monitoring + full maintenance)
 ./arch_maintenance.sh
 
-# Full maintenance (non-interactive)
+# Complete maintenance (non-interactive)
 ./arch_maintenance.sh --auto
 
-# Dry run (preview changes)
+# Complete maintenance (explicit all features)
+./arch_maintenance.sh --all
+
+# Dry run (preview all changes)
 ./arch_maintenance.sh --dry-run
 
 # Specific tasks only
-./arch_maintenance.sh --update-only
-./arch_maintenance.sh --clean-only
-
-# Hardware health monitoring
-./arch_maintenance.sh --health-check
+./arch_maintenance.sh --health-check     # Hardware monitoring only
+./arch_maintenance.sh --update-only      # Updates only
+./arch_maintenance.sh --clean-only       # Cleanup only
 ```
 
 ### Command Line Options
 
 - `--auto`: Run in automatic mode (no user prompts)
 - `--dry-run`: Preview changes without applying them
+- `--all`: Run all features (same as default, explicit)
 - `--update-only`: Only perform system updates
 - `--clean-only`: Only perform cleanup tasks
-- `--health-check`: Monitor hardware health (temperature, disk, memory)
+- `--health-check`: Monitor hardware health only
 - `--verbose`: Enable verbose output
 - `--help`: Show help information
 - `--version`: Show version information

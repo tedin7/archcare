@@ -28,6 +28,7 @@ AUTO_MODE=false
 UPDATE_ONLY=false
 CLEAN_ONLY=false
 HEALTH_CHECK=false
+ALL_FEATURES=false
 VERBOSE=false
 
 # Initialize directories and logging
@@ -412,6 +413,18 @@ check_failed_services() {
     fi
 }
 
+# Run hardware monitoring
+run_hardware_monitoring() {
+    if [ -f "$SCRIPTS_DIR/hardware_monitor.sh" ]; then
+        log_info "Running hardware health monitoring..."
+        . "$SCRIPTS_DIR/hardware_monitor.sh"
+        run_hardware_monitor
+    else
+        log_warning "Hardware monitoring script not found at $SCRIPTS_DIR/hardware_monitor.sh"
+        print_info "Skipping hardware monitoring"
+    fi
+}
+
 # Display help
 show_help() {
     cat << EOF
@@ -425,19 +438,22 @@ OPTIONS:
     --update-only   Only perform system updates
     --clean-only    Only perform cleanup tasks
     --health-check  Monitor hardware health (temperature, disk, memory)
+    --all           Run full maintenance + hardware monitoring + all features
     --verbose       Enable verbose output
     --help          Show this help message
     --version       Show version information
 
 EXAMPLES:
-    $0                    # Interactive mode
-    $0 --auto             # Automatic maintenance
+    $0                    # Interactive mode (includes hardware monitoring)
+    $0 --auto             # Automatic maintenance + hardware monitoring
+    $0 --all              # All features (maintenance + hardware monitoring)
     $0 --dry-run          # Preview mode
     $0 --update-only      # Updates only
     $0 --clean-only       # Cleanup only
-    $0 --health-check     # Hardware health monitoring
+    $0 --health-check     # Hardware health monitoring only
 
 This script performs comprehensive maintenance on Arch Linux systems including:
+- Hardware health monitoring (temperature, disk, memory)
 - System updates and AUR packages
 - Orphaned package removal
 - Cache cleaning
@@ -467,6 +483,9 @@ parse_arguments() {
             --health-check)
                 HEALTH_CHECK=true
                 ;;
+            --all)
+                ALL_FEATURES=true
+                ;;
             --verbose)
                 VERBOSE=true
                 ;;
@@ -492,12 +511,7 @@ parse_arguments() {
 run_maintenance() {
     if [ "$HEALTH_CHECK" = true ]; then
         print_header "Hardware Health Check Only"
-        if [ -f "$SCRIPTS_DIR/hardware_monitor.sh" ]; then
-            . "$SCRIPTS_DIR/hardware_monitor.sh"
-            run_hardware_monitor
-        else
-            log_error "Hardware monitoring script not found at $SCRIPTS_DIR/hardware_monitor.sh"
-        fi
+        run_hardware_monitoring
     elif [ "$UPDATE_ONLY" = true ]; then
         print_header "System Updates Only"
         update_databases
@@ -509,8 +523,31 @@ run_maintenance() {
         clean_package_cache
         clean_system_logs
         clean_temp_files
+    elif [ "$ALL_FEATURES" = true ]; then
+        print_header "Complete System Maintenance + Hardware Monitoring"
+        
+        # Hardware monitoring first
+        run_hardware_monitoring
+        
+        # Update tasks
+        update_databases
+        system_upgrade
+        update_aur_packages
+        
+        # Cleanup tasks
+        remove_orphans
+        clean_package_cache
+        clean_system_logs
+        clean_temp_files
+        
+        # System optimization
+        update_system_databases
+        check_failed_services
     else
-        print_header "Full System Maintenance"
+        print_header "Full System Maintenance + Hardware Monitoring"
+        
+        # Hardware monitoring first (now included by default)
+        run_hardware_monitoring
         
         # Update tasks
         update_databases
