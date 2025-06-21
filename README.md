@@ -20,6 +20,36 @@ This application provides automated maintenance tasks for Arch Linux systems, in
 - **Interactive mode**: User prompts for critical operations
 - **Dry-run mode**: Preview changes before applying them
 
+## ⭐ Features
+
+### 🔧 **System Maintenance**
+- **Package Management**: Complete system updates, AUR package updates, orphaned package removal
+- **Cache Management**: Package cache cleaning, system log cleanup, temporary file removal
+- **Database Updates**: System databases (locate, man pages) maintenance
+- **Service Monitoring**: Failed systemd service detection and reporting
+
+### 🌡️ **Hardware Health Monitoring**
+- **Temperature Monitoring**: CPU, GPU, and system temperature tracking with alerts
+- **Disk Health**: SMART status monitoring, disk usage analysis, SSD health metrics
+- **Memory Analysis**: RAM and swap usage monitoring with leak detection
+- **Fan Speed Monitoring**: System cooling status and fan curve analysis
+
+### 🔒 **Security Scanning & Hardening**
+- **Vulnerability Assessment**: System package security analysis
+- **Security Hardening**: Comprehensive kernel and system security enhancements
+- **File Integrity Monitoring**: AIDE-based file system integrity checking (566k+ files)
+- **Malware Detection**: Linux-specific malware scanning with automatic updates
+- **Intrusion Prevention**: fail2ban integration with automated threat blocking
+- **Authentication Security**: Failed login analysis and user security auditing
+
+### ⚡ **Performance Monitoring & Optimization**
+- **CPU Optimization**: Governor settings, frequency scaling, microcode analysis
+- **Memory Optimization**: Swappiness tuning, cache pressure optimization, leak detection  
+- **Disk Optimization**: SSD TRIM management, I/O scheduler optimization, filesystem analysis
+- **Network Optimization**: TCP congestion control, buffer tuning, interface monitoring
+- **Boot Time Analysis**: systemd-analyze integration with service optimization recommendations
+- **Performance Scoring**: Real-time system performance scoring (0-10 scale) with optimization suggestions
+
 ## Project Structure
 
 ```
@@ -60,41 +90,43 @@ chmod +x arch_maintenance.sh
 ./arch_maintenance.sh
 ```
 
-## Usage
+## 🚀 Usage
 
-### Basic Usage
+### Quick Start
 ```bash
-# Complete maintenance (hardware + security + full maintenance)
+# Interactive mode (includes hardware monitoring + security scan + performance optimization)
 ./arch_maintenance.sh
 
-# Complete maintenance (non-interactive)
+# Automatic mode (no prompts - includes all features)
 ./arch_maintenance.sh --auto
 
-# Complete maintenance (explicit all features)
-./arch_maintenance.sh --all
-
-# Dry run (preview all changes)
+# Preview mode (see what would be done)
 ./arch_maintenance.sh --dry-run
 
-# Specific tasks only
-./arch_maintenance.sh --health-check     # Hardware monitoring only
-./arch_maintenance.sh --security-scan    # Security scanning only
-./arch_maintenance.sh --update-only      # Updates only
-./arch_maintenance.sh --clean-only       # Cleanup only
+# Complete system maintenance with all features
+./arch_maintenance.sh --all
 ```
 
-### Command Line Options
+### Specific Operations
+```bash
+# System updates only
+./arch_maintenance.sh --update-only
 
-- `--auto`: Run in automatic mode (no user prompts)
-- `--dry-run`: Preview changes without applying them
-- `--all`: Run all features (same as default, explicit)
-- `--update-only`: Only perform system updates
-- `--clean-only`: Only perform cleanup tasks
-- `--health-check`: Monitor hardware health only
-- `--security-scan`: Security scanning only
-- `--verbose`: Enable verbose output
-- `--help`: Show help information
-- `--version`: Show version information
+# Cleanup operations only
+./arch_maintenance.sh --clean-only
+
+# Hardware health check only
+./arch_maintenance.sh --health-check
+
+# Security scanning only
+./arch_maintenance.sh --security-scan
+
+# Performance optimization only
+./arch_maintenance.sh --performance
+
+# Verbose output
+./arch_maintenance.sh --verbose
+```
 
 ## Maintenance Tasks
 

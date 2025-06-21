@@ -30,6 +30,7 @@ CLEAN_ONLY=false
 HEALTH_CHECK=false
 ALL_FEATURES=false
 SECURITY_SCAN=false
+PERFORMANCE_OPT=false
 VERBOSE=false
 
 # Initialize directories and logging
@@ -438,6 +439,20 @@ run_security_scanning() {
     fi
 }
 
+# Run performance optimization
+run_performance_optimization() {
+    if [ -f "$SCRIPTS_DIR/performance_optimizer.sh" ]; then
+        log_info "Running performance monitoring and optimization..."
+        . "$SCRIPTS_DIR/performance_optimizer.sh"
+        run_performance_monitor
+        run_performance_optimizer
+        generate_performance_summary
+    else
+        log_warning "Performance optimizer script not found at $SCRIPTS_DIR/performance_optimizer.sh"
+        print_info "Skipping performance optimization"
+    fi
+}
+
 # Display help
 show_help() {
     cat << EOF
@@ -452,6 +467,7 @@ OPTIONS:
     --clean-only    Only perform cleanup tasks
     --health-check  Monitor hardware health (temperature, disk, memory)
     --security-scan Security scanning (vulnerabilities, malware, config)
+    --performance   Performance monitoring and optimization (CPU, memory, disk, network)
     --all           Run full maintenance + hardware monitoring + all features
     --verbose       Enable verbose output
     --help          Show this help message
@@ -460,16 +476,18 @@ OPTIONS:
 EXAMPLES:
     $0                    # Interactive mode (includes hardware monitoring)
     $0 --auto             # Automatic maintenance + hardware monitoring
-    $0 --all              # All features (maintenance + hardware monitoring)
+    $0 --all              # All features (maintenance + hardware monitoring + security + performance)
     $0 --dry-run          # Preview mode
     $0 --update-only      # Updates only
     $0 --clean-only       # Cleanup only
     $0 --health-check     # Hardware health monitoring only
     $0 --security-scan    # Security scanning only
+    $0 --performance      # Performance optimization only
 
 This script performs comprehensive maintenance on Arch Linux systems including:
 - Hardware health monitoring (temperature, disk, memory)
 - Security scanning (vulnerabilities, malware, configuration)
+- Performance monitoring and optimization (CPU, memory, disk, network)
 - System updates and AUR packages
 - Orphaned package removal
 - Cache cleaning
@@ -505,6 +523,9 @@ parse_arguments() {
             --security-scan)
                 SECURITY_SCAN=true
                 ;;
+            --performance)
+                PERFORMANCE_OPT=true
+                ;;
             --verbose)
                 VERBOSE=true
                 ;;
@@ -534,6 +555,9 @@ run_maintenance() {
     elif [ "$SECURITY_SCAN" = true ]; then
         print_header "Security Scan Only"
         run_security_scanning
+    elif [ "$PERFORMANCE_OPT" = true ]; then
+        print_header "Performance Optimization Only"
+        run_performance_optimization
     elif [ "$UPDATE_ONLY" = true ]; then
         print_header "System Updates Only"
         update_databases
@@ -546,13 +570,16 @@ run_maintenance() {
         clean_system_logs
         clean_temp_files
     elif [ "$ALL_FEATURES" = true ]; then
-        print_header "Complete System Maintenance + Hardware Monitoring + Security Scan"
+        print_header "Complete System Maintenance + Hardware Monitoring + Security Scan + Performance Optimization"
         
         # Hardware monitoring first
         run_hardware_monitoring
         
         # Security scanning
         run_security_scanning
+        
+        # Performance optimization
+        run_performance_optimization
         
         # Update tasks
         update_databases
@@ -569,13 +596,16 @@ run_maintenance() {
         update_system_databases
         check_failed_services
     else
-        print_header "Full System Maintenance + Hardware Monitoring + Security Scan"
+        print_header "Full System Maintenance + Hardware Monitoring + Security Scan + Performance Optimization"
         
         # Hardware monitoring first (now included by default)
         run_hardware_monitoring
         
         # Security scanning (now included by default)
         run_security_scanning
+        
+        # Performance optimization (now included by default)
+        run_performance_optimization
         
         # Update tasks
         update_databases
